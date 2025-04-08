@@ -27,3 +27,4 @@ class Bitcoins {
       "apellidos": precio, // Añade el precio al mapa.
     };
   }
+}

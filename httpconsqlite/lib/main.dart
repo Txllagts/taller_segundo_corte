@@ -1,122 +1,100 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // Importa el paquete Flutter para widgets de Material Design
+import 'package:dio/dio.dart'; // Importa el paquete para realizar solicitudes HTTP
+import 'package:httpconsqlite/database_helper.dart';
+import 'package:httpconsqlite/bitcoins.dart';
+import 'dart:async'; // Importa el paquete para utilizar objetos relacionados con el tiempo (Timer)
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp()); // Inicializa la aplicación con el widget MyApp
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      theme: ThemeData.dark(), // Establece el tema oscuro de la aplicación
+      home: MyHomePage(), // Establece MyHomePage como la pantalla principal
+      debugShowCheckedModeBanner: false, // Oculta el banner de depuración
     );
   }
 }
 
+class CryptoPrice {
+  final String name; // Nombre de la criptomoneda
+  final String imagePath; // Ruta de la imagen de la criptomoneda
+  final String price; // Precio de la criptomoneda
+
+  CryptoPrice({required this.name, required this.imagePath, required this.price}); // Constructor de CryptoPrice
+}
+
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState(); // Crea el estado de la pantalla principal
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  Dio dio = Dio(); // Instancia de la clase Dio para realizar solicitudes HTTP
+  List<CryptoPrice> cryptoPrices = []; // Lista para almacenar la información de las criptomonedas
+  int refreshIntervalInSeconds = 60; // Intervalo de actualización en segundos
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData(); // Llama a fetchData al inicio
+
+    // Establece un Timer para actualizar los datos periódicamente
+    Timer.periodic(Duration(seconds: refreshIntervalInSeconds), (Timer t) {
+      fetchData(); // Llama a fetchData en intervalos regulares definidos por refreshIntervalInSeconds
     });
+  }
+
+  void fetchData() async {
+    try {
+      Response response = await dio.get(
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple,litecoin&vs_currencies=usd');
+      Map<String, dynamic> cryptoData = response.data;
+      setState(() {
+        cryptoPrices = [
+          // Crea objetos CryptoPrice con información obtenida y los agrega a la lista cryptoPrices
+          CryptoPrice(name: 'Bitcoin', imagePath: 'assets/images/bitcoin.png', price: cryptoData['bitcoin']['usd'].toString()),
+
+        ];
+      });
+    } catch (error) {
+      setState(() {
+        // En caso de error al cargar los datos, muestra un objeto CryptoPrice con información de error
+        cryptoPrices = [
+          CryptoPrice(name: 'Error', imagePath: 'assets/images/error.png', price: 'Error al cargar datos')
+        ];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      appBar: AppBar(title: Text('Precios de Criptomonedas')), // Barra de aplicación con un título
+      body: ListView.builder(
+        itemCount: cryptoPrices.length, // Número de elementos en la lista
+        itemBuilder: (BuildContext context, int index) {
+          return Card(
+            elevation: 4, // Elevación de la tarjeta
+            margin: EdgeInsets.all(8), // Márgenes alrededor de la tarjeta
+            child: ListTile(
+              leading: Image.asset(
+                cryptoPrices[index].imagePath, // Ruta de la imagen de la criptomoneda
+                width: 40,
+                height: 40,
+              ),
+              title: Text('${cryptoPrices[index].name}'), // Nombre de la criptomoneda
+              trailing: Text('\$${cryptoPrices[index].price}'), // Precio de la criptomoneda
             ),
-          ],
-        ),
+
+
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
