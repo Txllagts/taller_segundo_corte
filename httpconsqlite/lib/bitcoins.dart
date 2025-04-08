@@ -24,7 +24,7 @@ class Bitcoins {
     return {
       if (id != null) "id": id, // Si el id no es nulo, añade el id al mapa.
       "nombre": nombre, // Añade el nombre al mapa.
-      "apellidos": precio, // Añade el precio al mapa.
+      "precio": precio, // Añade el precio al mapa.
     };
   }
 }
