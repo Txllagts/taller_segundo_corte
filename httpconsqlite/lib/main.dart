@@ -77,57 +77,65 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Precios de Criptomonedas')), // Barra de aplicación con un título
-      body: ListView.builder(
-        itemCount: cryptoPrices.length, // Número de elementos en la lista
-        itemBuilder: (BuildContext context, int index) {
-
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(title: Text('Precios de Criptomonedas')),
+    body: ListView.builder(
+      itemCount: cryptoPrices.length + 1, // Sumamos 1 para el botón final
+      itemBuilder: (BuildContext context, int index) {
+        if (index < cryptoPrices.length) {
+          // Construimos la tarjeta de cada criptomoneda
           return Card(
-            elevation: 4, // Elevación de la tarjeta
-            margin: EdgeInsets.all(8), // Márgenes alrededor de la tarjeta
+            elevation: 4,
+            margin: EdgeInsets.all(8),
             child: Padding(
-                padding: const EdgeInsets.all(12.0),
-
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
                     leading: Image.asset(
-                      cryptoPrices[index].imagePath, // Ruta de la imagen de la criptomoneda
+                      cryptoPrices[index].imagePath,
                       width: 40,
                       height: 40,
                     ),
-                    title: Text('${cryptoPrices[index].name}'), // Nombre de la criptomoneda
-                    trailing: Text('\$${cryptoPrices[index].price}'), // Precio de la criptomoneda
+                    title: Text('${cryptoPrices[index].name}'),
+                    trailing: Text('\$${cryptoPrices[index].price}'),
                   ),
-            ElevatedButton(
-              onPressed: () async {
-                // Lógica para agregar una bitcoin a la base de datos
-                if (cryptoPrices[index].name.isNotEmpty &&
-                    cryptoPrices[index].price.isNotEmpty) {
-                  await dbHelper.insertBitcoin(Bitcoins(
-                    nombre: cryptoPrices[index].name,
-                    precio: cryptoPrices[index].price,
-                  ));
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Cryptomoneda agregada correctamente'), // Mensaje de éxito al agregar la persona
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error, no se pudo insertar la cryptomoneda'), // Mensaje si los campos están vacíos
-                    ),
-                  );
-                }
-              },
-              child: Text('Agregar Cryptomoneda'), // Texto en el botón para agregar una persona
-            ),
                   ElevatedButton(
+                    onPressed: () async {
+                      if (cryptoPrices[index].name.isNotEmpty &&
+                          cryptoPrices[index].price.isNotEmpty) {
+                        await dbHelper.insertBitcoin(Bitcoins(
+                          nombre: cryptoPrices[index].name,
+                          precio: cryptoPrices[index].price,
+                        ));
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Cryptomoneda agregada correctamente'),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error, no se pudo insertar la cryptomoneda'),
+                          ),
+                        );
+                      }
+                    },
+                    child: Text('Agregar Cryptomoneda'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else {
+          // Al final de la lista mostramos el botón de "Ver Datos"
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child:  ElevatedButton(
                     onPressed: () async {
                       // Lógica para ver los datos de las personas en una nueva vista
                       List<Bitcoins> bitcoin = await dbHelper.getBitcoins();
@@ -140,15 +148,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     },
                     child: Text('Ver Datos'), // Texto en el botón para ver datos existentes
                   ),
-
-                ],
-              )
-            )
-
+            ),
           );
-
-        },
-      ),
-    );
-  }
+        }
+      },
+    ),
+  );
+}
 }
