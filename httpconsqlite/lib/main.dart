@@ -25,6 +25,7 @@ class CryptoPrice {
   final String imagePath; // Ruta de la imagen de la criptomoneda
   final String price; // Precio de la criptomoneda
 
+
   CryptoPrice({required this.name, required this.imagePath, required this.price}); // Constructor de CryptoPrice
 }
 
@@ -35,7 +36,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   Dio dio = Dio(); // Instancia de la clase Dio para realizar solicitudes HTTP
-  List<CryptoPrice> cryptoPrices = []; // Lista para almacenar la información de las criptomonedas
+  List<CryptoPrice> cryptoPrices = [
+  ]; // Lista para almacenar la información de las criptomonedas
   int refreshIntervalInSeconds = 60; // Intervalo de actualización en segundos
   final DatabaseHelper dbHelper = DatabaseHelper();
 
@@ -59,10 +61,18 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         cryptoPrices = [
           // Crea objetos CryptoPrice con información obtenida y los agrega a la lista cryptoPrices
-          CryptoPrice(name: 'Bitcoin', imagePath: 'assets/images/bitcoin.png', price: cryptoData['bitcoin']['usd'].toString()),
-          CryptoPrice(name: 'Ethereum', imagePath: 'assets/images/ethereum.png', price: cryptoData['ethereum']['usd'].toString()),
-          CryptoPrice(name: 'Ripple', imagePath: 'assets/images/ripple.png', price: cryptoData['ripple']['usd'].toString()),
-          CryptoPrice(name: 'Litecoin', imagePath: 'assets/images/litecoin.png', price: cryptoData['litecoin']['usd'].toString()),
+          CryptoPrice(name: 'Bitcoin',
+              imagePath: 'assets/images/bitcoin.png',
+              price: cryptoData['bitcoin']['usd'].toString()),
+          CryptoPrice(name: 'Ethereum',
+              imagePath: 'assets/images/ethereum.png',
+              price: cryptoData['ethereum']['usd'].toString()),
+          CryptoPrice(name: 'Ripple',
+              imagePath: 'assets/images/ripple.png',
+              price: cryptoData['ripple']['usd'].toString()),
+          CryptoPrice(name: 'Litecoin',
+              imagePath: 'assets/images/litecoin.png',
+              price: cryptoData['litecoin']['usd'].toString()),
 
         ];
       });
@@ -70,89 +80,106 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         // En caso de error al cargar los datos, muestra un objeto CryptoPrice con información de error
         cryptoPrices = [
-          CryptoPrice(name: 'Error', imagePath: 'assets/images/error.png', price: 'Error al cargar datos')
+          CryptoPrice(name: 'Error',
+              imagePath: 'assets/images/error.png',
+              price: 'Error al cargar datos')
         ];
       });
     }
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(title: Text('Precios de Criptomonedas')),
-    body: ListView.builder(
-      itemCount: cryptoPrices.length + 1, // Sumamos 1 para el botón final
-      itemBuilder: (BuildContext context, int index) {
-        if (index < cryptoPrices.length) {
-          // Construimos la tarjeta de cada criptomoneda
-          return Card(
-            elevation: 4,
-            margin: EdgeInsets.all(8),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    leading: Image.asset(
-                      cryptoPrices[index].imagePath,
-                      width: 40,
-                      height: 40,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Precios de Criptomonedas')),
+      body: ListView.builder(
+        itemCount: cryptoPrices.length + 1,
+        itemBuilder: (BuildContext context, int index) {
+          if (index < cryptoPrices.length) {
+            return Card(
+              elevation: 4,
+              margin: EdgeInsets.all(8),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      leading: Image.asset(
+                        cryptoPrices[index].imagePath,
+                        width: 40,
+                        height: 40,
+                      ),
+                      title: Text('${cryptoPrices[index].name}'),
+                      trailing: Text('\$${cryptoPrices[index].price}'),
                     ),
-                    title: Text('${cryptoPrices[index].name}'),
-                    trailing: Text('\$${cryptoPrices[index].price}'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (cryptoPrices[index].name.isNotEmpty &&
-                          cryptoPrices[index].price.isNotEmpty) {
-                        await dbHelper.insertBitcoin(Bitcoins(
-                          nombre: cryptoPrices[index].name,
-                          precio: cryptoPrices[index].price,
-                        ));
+                  ],
+                ),
+              ),
+            );
+          } else {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        bool huboError = false;
+
+                        for (var crypto in cryptoPrices) {
+                          if (crypto.name.isNotEmpty &&
+                              crypto.price.isNotEmpty) {
+                            try {
+                              await dbHelper.insertBitcoin(Bitcoins(
+                                nombre: crypto.name,
+                                precio: crypto.price,
+                              ));
+                            } catch (e) {
+                              print('Error insertando ${crypto.name}: $e');
+                              huboError = true;
+                            }
+                          } else {
+                            print('Datos inválidos para ${crypto.name}');
+                            huboError = true;
+                          }
+                        }
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Cryptomoneda agregada correctamente'),
+                            content: Text(huboError
+                                ? 'Algunas criptomonedas no se pudieron insertar'
+                                : 'Todas las criptomonedas fueron agregadas correctamente'),
                           ),
                         );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error, no se pudo insertar la cryptomoneda'),
+                      },
+                      child: Text('Agregar Cryptomonedas'),
+                    ),
+                    SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () async {
+                        List<Bitcoins> bitcoin = await dbHelper.getBitcoins();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                VistaDatosPage(
+                                  dbHelper: dbHelper,
+                                ),
                           ),
                         );
-                      }
-                    },
-                    child: Text('Agregar Cryptomoneda'),
-                  ),
-                ],
+                      },
+                      child: Text('Ver Datos'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        } else {
-          // Al final de la lista mostramos el botón de "Ver Datos"
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child:  ElevatedButton(
-                    onPressed: () async {
-                      // Lógica para ver los datos de las personas en una nueva vista
-                      List<Bitcoins> bitcoin = await dbHelper.getBitcoins();
-                      Navigator.push( // Navega a la página VistaDatosPage para ver los datos
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VistaDatosPage(listaBitcoins: bitcoin, dbHelper: dbHelper),
-                        ),
-                      );
-                    },
-                    child: Text('Ver Datos'), // Texto en el botón para ver datos existentes
-                  ),
-            ),
-          );
-        }
-      },
-    ),
-  );
-}
+            );
+          }
+        },
+      ),
+    );
+  }
 }
